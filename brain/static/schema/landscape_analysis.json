@@ -1,0 +1,157 @@
+{
+    "type": "object",
+    "title": "Landscape Analysis",
+    "description": "Analyze authentication landscape of domains including passkeys, IdPs, MFA, and password-based auth",
+    "properties": {
+        "scan_config": {
+            "type": "object",
+            "title": "Scan Configuration",
+            "oneOf": [
+                {
+                    "title": "Single domain",
+                    "properties": {
+                        "scan_id": {
+                            "type": "string",
+                            "required": true,
+                            "default": "",
+                            "options": {"hidden": true}
+                        },
+                        "scan_type": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["single"],
+                            "options": {"hidden": true}
+                        },
+                        "domain": {
+                            "type": "string",
+                            "required": true,
+                            "title": "Domain"
+                        }
+                    }
+                },
+                {
+                    "title": "Range of domains",
+                    "properties": {
+                        "scan_id": {
+                            "type": "string",
+                            "required": true,
+                            "default": "",
+                            "options": {"hidden": true}
+                        },
+                        "scan_type": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["range"],
+                            "options": {"hidden": true}
+                        },
+                        "list_id": {
+                            "type": "string",
+                            "required": true,
+                            "title": "List ID"
+                        },
+                        "offset": {
+                            "type": "integer",
+                            "required": true,
+                            "default": 1,
+                            "title": "Offset"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "required": true,
+                            "default": 100,
+                            "title": "Limit"
+                        }
+                    }
+                }
+            ]
+        },
+        "landscape_analysis_config": {
+            "type": "object",
+            "title": "Configuration",
+            "properties": {
+                "browser_config": {
+                    "type": "object",
+                    "required": true,
+                    "title": "Browser",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "required": true,
+                            "default": "CHROMIUM",
+                            "enum": ["CHROMIUM", "FIREFOX", "WEBKIT"]
+                        },
+                        "width": {
+                            "type": "integer",
+                            "required": true,
+                            "default": 1920
+                        },
+                        "height": {
+                            "type": "integer",
+                            "required": true,
+                            "default": 1080
+                        },
+                        "headless": {
+                            "type": "boolean",
+                            "required": true,
+                            "default": false
+                        },
+                        "timeout_default": {
+                            "type": "number",
+                            "required": true,
+                            "default": 30
+                        }
+                    }
+                },
+                "login_page_config": {
+                    "type": "object",
+                    "required": true,
+                    "title": "Login Page Detection",
+                    "properties": {
+                        "login_page_strategy_scope": {
+                            "type": "array",
+                            "required": true,
+                            "default": ["PATHS", "CRAWLING", "HOMEPAGE"],
+                            "items": {
+                                "type": "string",
+                                "enum": ["PATHS", "CRAWLING", "METASEARCH", "HOMEPAGE", "SITEMAP", "ROBOTS", "MANUAL"]
+                            }
+                        }
+                    }
+                },
+                "idp_config": {
+                    "type": "object",
+                    "required": true,
+                    "title": "Identity Providers",
+                    "properties": {
+                        "idp_scope": {
+                            "type": "array",
+                            "required": true,
+                            "default": ["APPLE", "GOOGLE", "MICROSOFT", "GITHUB", "FACEBOOK"],
+                            "items": {
+                                "type": "string",
+                                "enum": ["APPLE", "GOOGLE", "MICROSOFT", "GITHUB", "FACEBOOK", "TWITTER", "LINKEDIN"]
+                            }
+                        }
+                    }
+                },
+                "artifacts_config": {
+                    "type": "object",
+                    "required": true,
+                    "title": "Artifacts",
+                    "properties": {
+                        "store_screenshots": {
+                            "type": "boolean",
+                            "required": true,
+                            "default": true
+                        },
+                        "store_har": {
+                            "type": "boolean",
+                            "required": true,
+                            "default": false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

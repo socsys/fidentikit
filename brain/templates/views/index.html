@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+
+    <div class="row mb-4">
+        <div class="col mb-4 bg-light rounded-3 text-center">
+            <img src="{{ url_for('static', filename='f-kit.png') }}" alt="FidentiKit Logo" class="img-fluid">
+            <h1 class="my-4" style="font-variant: small-caps; font-weight: bold;">FidentiKit</h1>
+            <h2 class="my-4">A Browser-Based Crawler for<br>Large-Scale Passkey Adoption Measurements</h2>
+            <div>
+                <a class="btn btn-success btn-lg me-2 mb-4" href="{{ url_for('views.sso_archive') }}">Explore the <b>Archive</b></a>
+                <a class="btn btn-success btn-lg me-2 mb-4" href="{{ url_for('views.sso_stats') }}">Generate <b>Statistics</b></a>
+                <a class="btn btn-success btn-lg me-2 mb-4" href="{{ url_for('views.sso_list') }}">Download the <b>Tranco+Passkey List</b></a>
+                <a class="btn btn-success btn-lg me-2 mb-4" href="{{ url_for('views.paper') }}">Read the <b>Paper</b></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Abstract</h3>
+            <p>Passkeys -- discoverable WebAuthn credentials synchronized across devices—are widely promoted as the future of passwordless authentication. Built on the FIDO2 standard, they eliminate shared secrets and resist phishing while offering usability through platform credential managers. Since their introduction in 2022, major vendors have integrated passkeys into operating systems and browsers, and prominent websites have announced support. Yet the true extent of adoption across the broader web remains unknown.</p>
+            <p>Measuring this is challenging because websites implement passkeys in heterogeneous ways. Some expose explicit ``Sign in with passkey'' buttons, others hide options under multi-step flows or rely on conditional mediation, and many adopt external mechanisms such as JavaScript libraries or OAuth-based identity providers. There is no standardized discovery endpoint, and dynamic, JavaScript-heavy pages complicate automated detection.</p>
+            <p>This paper makes two contributions. First, we present <emph>Fidentikit</emph>, a browser-based crawler implementing 43 heuristics across five categories—UI elements, DOM structures, WebAuthn API calls, network patterns, and library detection—developed through iterative refinement over 1{,}500 sites. Second, we apply Fidentikit to the top 100{,}000 Tranco-ranked domains, producing the first large-scale census of passkey adoption. Our results show adoption strongly correlates with site popularity and often depends on external identity providers rather than native implementations.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Artifacts</h3>
+            <div class="row">
+                <div class="col-sm-12 col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-archive me-1"></i>
+                            Archive (Future-work)
+                        </div>
+                        <div class="card-body">
+                            <p>This module will list all archived passkey snapshots in a table. You can filter and search the archive, for instance, only select domains with passkey, only select domains of a specific scan, or select all domains matching a custom MongoDB query for more advanced fine-grained filtering.</p>
+                            <a href="{{ url_for('views.sso_archive') }}" class="btn btn-outline-secondary btn-sm">Go to the Archive</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-pie-chart me-1"></i>
+                            Statistics (TODO)
+                        </div>
+                        <div class="card-body">
+                            <p>This module allows you to compute statistics on our passkey archive. You can load the latest scan, a specific scan, or a ground truth to show aggregated statistics of the data, including the number of passkey implementations, login pages, authentication mechanisms, and the position of passkey buttons on the browser canvas.</p>
+                            <a href="{{ url_for('views.sso_stats') }}" class="btn btn-outline-secondary btn-sm">Go to the Statistics</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-list-ol me-1"></i>
+                            Tranco+Passkey List (TODO)
+                        </div>
+                        <div class="card-body">
+                            <p>This module allows you to download our passkey archive as a large JSON file. Since our API uses pagination and does not provide all data at once, we provide a large JSON file holding all passkey snapshots instead. The file allows you to apply your own parsing and queries for individual filtering.</p>
+                            <a href="{{ url_for('views.sso_list') }}" class="btn btn-outline-secondary btn-sm">Go to the Tranco+Passkey List</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col mb-4">
+            <h3>FAQs</h3>
+            <div class="accordion" id="accordionFaq">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePasskey">
+                            What are Passkeys?
+                        </button>
+                    </h2>
+                    <div id="collapsePasskey" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>Passkeys are discoverable WebAuthn credentials synchronized across devices, widely promoted as the future of passwordless authentication. Built on the FIDO2 standard, they eliminate shared secrets and resist phishing while offering superior usability through platform credential managers. Passkeys use public-key cryptography where each credential consists of a public key stored on the server and a private key stored securely on the user's device. Authentication happens through cryptographic proof of possession of the private key, typically via biometrics (fingerprint, face recognition) or device PIN. Since their introduction in 2022, major vendors including Apple, Google, and Microsoft have integrated passkeys into operating systems and browsers, enabling seamless cross-device synchronization and authentication.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTool">
+                            What is FidentiKit?
+                        </button>
+                    </h2>
+                    <div id="collapseTool" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>FidentiKit is an open-source browser-based crawler that implements 43 heuristics across five categories—UI elements, DOM structures, WebAuthn API calls, network patterns, and library detection—to detect passkey adoption across the web. It continuously iterates over websites, determines their login pages, and checks whether they support passkey authentication. FidentiKit uses detection techniques such as virtual authenticators to capture WebAuthn implementation parameters, making it the first large-scale measurement tool capable of comprehensively analyzing passkey adoption.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseArchiveVsMonitor">
+                            What is the passkey archive?
+                        </button>
+                    </h2>
+                    <div id="collapseArchiveVsMonitor" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>The passkey archive will be our central collection and long-term storage of artifacts and data, including every component of this website that lets you explore or download our archived data. FidentiKit is the tool that generates the data that is fed into our passkey archive. You can think of our passkey archive as the <a href="https://tranco-list.eu/">Tranco Top Sites Ranking</a> and the <a href="https://web.archive.org/">Internet Archive's Wayback Machine</a> but for passkey adoption research.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLpDetection">
+                            How do we determine login pages of websites?
+                        </button>
+                    </h2>
+                    <div id="collapseLpDetection" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>FidentiKit executes the following steps to determine login pages of websites:</p>
+                            <ol>
+                                <li>It navigates to the website and checks whether it is reachable.</li>
+                                <li>
+                                    It scans the website for login pages using the following techniques:
+                                    <ul>
+                                        <li>it crawls the website for links pointing the login page (with Playwright)</li>
+                                        <li>it tests well-known paths like <code>shop.com/login</code> or subdomains like <code>login.shop.com</code></li>
+                                        <li>it scans the website's <a href="https://www.sitemaps.org/">sitemap</a> (with Playwright)</li>
+                                        <li>it scans the website's homepage (with Playwright)</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSsoDetection">
+                            How do we detect passkey support on login pages?
+                        </button>
+                    </h2>
+                    <div id="collapseSsoDetection" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>FidentiKit executes the following steps to detect passkey support on login pages:</p>
+                            <ol>
+                                <li>It navigates to the login page and checks whether it is reachable.</li>
+                                <li>
+                                    It scans the login page for passkey authentication using multiple detection techniques:
+                                    <ul>
+                                        <li><strong>UI Element Detection:</strong> Searches for passkey-related buttons, biometric icons, and text patterns like "Sign in with passkey", "Use your passkey", or biometric indicators in the DOM and accessibility tree</li>
+                                        <li><strong>JavaScript API Instrumentation:</strong> Hooks the <code>navigator.credentials.create</code> and <code>navigator.credentials.get</code> APIs to detect WebAuthn calls</li>
+                                        <li><strong>Enterprise Pattern Detection:</strong> Identifies passkey implementations from major providers (Microsoft, Google, Apple, Adobe, BestBuy) using domain-specific patterns and CSS selectors</li>
+                                        <li><strong>Keyword Scanning:</strong> Scans visible page text and titles for passkey-related keywords</li>
+                                        <li><strong>Virtual Authenticator:</strong> Uses Chrome DevTools Protocol to set up a virtual FIDO2 authenticator and capture WebAuthn implementation parameters including create/get options, credentials, and CDP events</li>
+                                        <li><strong>Metadata Detection:</strong> Checks for <code>.well-known/passkey-endpoints</code> and other well-known metadata files</li>
+                                    </ul>
+                                </li>
+                                <li>It stores snapshots in our <a href="{{ url_for('views.sso_archive') }}">passkey archive</a>, including detection methods, indicators, element coordinates, WebAuthn parameters, screenshots, and implementation details.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIdps">
+                            Which identity providers do we detect?
+                        </button>
+                    </h2>
+                    <div id="collapseIdps" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>FidentiKit detects multiple authentication mechanisms:</p>
+                            <ul>
+                                <li><strong>Passkey Authentication:</strong> Using 43 heuristics across UI elements, JavaScript APIs, enterprise patterns, and virtual authenticator capture</li>
+                                <li><strong>Multi-Factor Authentication (MFA):</strong> Detects OTP input fields, MFA-related text, and QR codes</li>
+                                <li><strong>Password-Based Authentication:</strong> Identifies username/email and password input fields</li>
+                                <li><strong>Identity Providers (IDPs):</strong> Uses SSO-Monitor inspired detection techniques to detect buttons for Apple, Google, Microsoft, GitHub, and Facebook</li>
+                            </ul>
+                            <p>FidentiKit also captures detailed WebAuthn implementation parameters including create/get options, credentials, and CDP events when passkeys are detected (Under development)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePassword">
+                            Do we detect username and password logins?
+                        </button>
+                    </h2>
+                    <div id="collapsePassword" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>Yes, FidentiKit also detects username and password logins by integrating the <a href="https://chrome.google.com/webstore/detail/lastpass-free-password-ma/hdokiejnpimakedhajhdlcegeplioahd">LastPass password manager</a>. Password managers already use sophisticated algorithms to find username and password fields. These algorithms go beyond checking the <code>type</code> attributes of <code>&lt;input&gt;</code> fields. Lastpass is the most downloaded password manager with over 10 million users in the Chrome web store and has been extensively studied in academic research. The extension injects a uniquely identifiable icon into all username and password fields, allowing FidentiKit to identify all fields.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWeb">
+                            How can web security researchers profit from our research?
+                        </button>
+                    </h2>
+                    <div id="collapseWeb" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>Passkey adoption measurement is crucial for understanding the transition from passwords to passwordless authentication. Large-scale measurements of passkey adoption are challenging because websites implement passkeys in heterogeneous ways—some expose explicit "Sign in with passkey" buttons, others hide options under multi-step flows or rely on conditional mediation, and many adopt external mechanisms such as JavaScript libraries or OAuth-based identity providers. There is no standardized discovery endpoint, and dynamic, JavaScript-heavy pages complicate automated detection. FidentiKit addresses these challenges with 43 heuristics developed through manual iterative refinement over sites. We see our open-source passkey archive and the FidentiKit tool as a baseline for future passkey adoption research. FidentiKit's extensible architecture and (upcoming - virtual authenticator) capabilities enable comprehensive analysis of WebAuthn implementations, capturing not just detection but also detailed implementation parameters for security researchers.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTaskScanTag">
+                            What is the difference between tasks, scans, and tags?
+                        </button>
+                    </h2>
+                    <div id="collapseTaskScanTag" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>We create an individual task for each analysis of a domain. For instance, if we analyze the top 100k domains of the Tranco list, we create 100k tasks in total (one for each domain). Tasks are contained in a scan that defines the targeted domains that should be analyzed. For instance, we create a single scan for the Tranco top 100k domains that holds a total of 100k tasks. Scans can be further combined by tagging them. For instance, if we later decide to scan additional domains in a new scan, we can add the same tag to both scans. This allows us to gradually execute smaller scans and combine them at a later time. Each task performs both landscape analysis (detecting passkey presence) and passkey analysis (capturing detailed WebAuthn implementation parameters using virtual authenticators).</p>
+                        </div>
+                    </div>
+                </div> -->
+                <!-- <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAPI">
+                            Is there a public API?
+                        </button>
+                    </h2>
+                    <div id="collapseAPI" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>Yes, we follow an API-centric approach and provide a publicly accessible API for all our data. In fact, everything you can see on this website is fetched from our API. We also provide an <a href="/openapi.json">OpenAPI file</a> and an <a href="/docs">API documentation</a> to make working with the API more convenient.</p>
+                        </div>
+                    </div>
+                </div> --> 
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOS">
+                            Is the tool and data open-source?
+                        </button>
+                    </h2>
+                    <div id="collapseOS" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body">
+                            <p>Yes, FidentiKit is <a href="{{ url_for('views.code') }}">open-source</a> and will be actively maintained for research purposes. Our passkey archive contains all data and is provided throughout this website in various formats, i.e., as downloadable JSON files or via APIs that can be filtered with queries. The archive includes detection results, WebAuthn implementation parameters, screenshots, and all artifacts captured during the analysis process.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col mb-4">
+            <h3>Citation</h3>
+            <p>If you use our data or tooling for your research, please feel free to cite our publication:</p>
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#bibtex">BibTeX</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ieee">IEEE Style</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body tab-content">
+                    <div class="tab-pane fade show active" id="bibtex">
+                        <code>TBA</code>
+                    </div>
+                    <div class="tab-pane fade" id="ieee">
+                        <code>TBA</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <h3>Contact</h3>
+            <p>Feel free to contact us regarding this research, the artifacts, or the tooling.</p>
+            <ul>
+                <li>TBA</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

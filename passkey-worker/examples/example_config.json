@@ -1,0 +1,31 @@
+{
+  "domain": "example.com",
+  "config": {
+    "browser": {
+      "name": "CHROMIUM",
+      "headless": true,
+      "timeout_default": 30,
+      "timeout_navigation": 30,
+      "width": 1920,
+      "height": 1080,
+      "locale": "en-US",
+      "user_agent": "",
+      "extensions": [],
+      "scripts": [],
+      "sleep_after_onload": 3,
+      "wait_for_networkidle": true,
+      "timeout_networkidle": 10,
+      "sleep_after_networkidle": 2
+    },
+    "login_url": "https://example.com/login",
+    "capture_har": false,
+    "virtual_authenticator": {
+      "protocol": "ctap2",
+      "transport": "internal",
+      "has_resident_key": true,
+      "has_user_verification": true,
+      "is_user_verified": true
+    }
+  }
+}
+

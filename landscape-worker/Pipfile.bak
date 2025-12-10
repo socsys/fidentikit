@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pika = "*"
+playwright = "~=1.35.0"
+requests = "*"
+Pillow = "*"
+opencv-python = "*"
+numpy = "*"
+imutils = "*"
+tldextract = "*"
+nested-lookup = "*"
+jsonschema = "*"
+python-dateutil = "*"
+url-normalize = "*"
+psutil = "*"  # For process management
+pyee = "*"  # Required by Playwright
+websockets = "*"  # Required by Playwright
+greenlet = "*"  # For async operations
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"

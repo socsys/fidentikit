@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  v-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: xvfb-run -a python app.py
+    restart: unless-stopped
+    init: true
+    ipc: host
+    security_opt:
+      - seccomp=unconfined
+    networks:
+      - ProjectAuth-network
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    volumes:
+      - type: tmpfs
+        target: /tmpfs
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TMP_PATH=${TMP_PATH:-/tmpfs}
+      # auth
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme}
+      # rabbitmq
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_TLS=${RABBITMQ_TLS:-0}
+      - RABBITMQ_QUEUE=${RABBITMQ_QUEUE:-webauthn_param_analysis_treq}
+      # urls
+      - BRAIN_URL=${BRAIN_URL:-http://brain:8080}
+
+networks:
+  ProjectAuth-network:
+    external: true
+
