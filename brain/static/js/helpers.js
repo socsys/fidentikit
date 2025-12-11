@@ -50,8 +50,6 @@ const iconClassFromAnalysis = (analysis) => {
             return "bi-asterisk"
         case "passkey_analysis":
             return "bi-fingerprint"
-        case "webauthn_param_analysis":
-            return "bi-fingerprint"
         default:
             return "bi-question-circle"
     }

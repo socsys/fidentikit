@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block styles %}{% endblock %}
 
+    <script>
+        // Expose application root for JS (supports subpath deployments like /softwares/fidentikit)
+        window.APPLICATION_ROOT = "{{ application_root|default('') }}";
+    </script>
     <script src="{{ url_for('static', filename='js/helpers.js') }}"></script>
     {% block scriptsHeader %}{% endblock %}
 </head>

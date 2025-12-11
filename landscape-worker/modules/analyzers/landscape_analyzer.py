@@ -41,8 +41,24 @@ class LandscapeAnalyzer:
             "resolved": {},
             "timings": {},
             "login_page_candidates": [],
+            "passkey_detection": {
+                "detected": False,
+                "confidence": "NONE",
+                "detection_methods": [],  # Categories: UI_ELEMENT, DOM_STRUCTURE, JS_API, NETWORK, LIBRARY, ENTERPRISE
+                "indicators": [],  # Human-readable indicators
+                "webauthn_api_available": False,
+                "login_page_url": None,
+                "login_page_strategy": None,
+                "element_info": {
+                    "coordinates_x": None,
+                    "coordinates_y": None,
+                    "width": None,
+                    "height": None,
+                    "inner_text": None,
+                    "outer_html": None
+                }
+            },
             "authentication_mechanisms": {
-                "passkey": [],
                 "mfa": [],
                 "password": []
             },
@@ -196,13 +212,31 @@ class LandscapeAnalyzer:
                     except:
                         pass
                     
-                    # Passkey detection
+                    # Passkey detection -> populate structured passkey_detection
                     try:
                         passkey_result = passkey_detector.detect_full(lpc_url)
-                        logger.info(f"Passkey detection result for {lpc_url}: detected={passkey_result.get('detected')}, webauthn_api={passkey_result.get('webauthn_api_available')}")
+                        logger.info(f"Passkey detection result for {lpc_url}: detected={passkey_result.get('detected')}, methods={passkey_result.get('detection_methods')}, webauthn_api={passkey_result.get('webauthn_api_available')}")
                         if passkey_result.get("detected"):
-                            passkey_result["login_page_url"] = lpc_url
-                            self.result["authentication_mechanisms"]["passkey"].append(passkey_result)
+                            detection_methods = passkey_result.get("detection_methods", [])
+                            # Get login_page_strategy from the first matching candidate
+                            lpc_strategy = self.result["login_page_candidates"][lpc_idxs[0]].get("login_page_strategy", "UNKNOWN") if lpc_idxs else "UNKNOWN"
+                            self.result["passkey_detection"] = {
+                                "detected": True,
+                                "confidence": passkey_result.get("confidence", "NONE"),
+                                "detection_methods": detection_methods,
+                                "indicators": passkey_result.get("indicators", []),
+                                "webauthn_api_available": passkey_result.get("webauthn_api_available", False),
+                                "login_page_url": lpc_url,
+                                "login_page_strategy": lpc_strategy,
+                                "element_info": {
+                                    "coordinates_x": passkey_result.get("element_coordinates_x"),
+                                    "coordinates_y": passkey_result.get("element_coordinates_y"),
+                                    "width": passkey_result.get("element_width"),
+                                    "height": passkey_result.get("element_height"),
+                                    "inner_text": passkey_result.get("element_inner_text"),
+                                    "outer_html": passkey_result.get("element_outer_html")
+                                }
+                            }
                     except Exception as e:
                         logger.warning(f"Error in passkey detection for {lpc_url}: {e}")
                         logger.debug(traceback.format_exc())

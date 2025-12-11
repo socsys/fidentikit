@@ -120,7 +120,8 @@ function updateListConfig({
 // update links
 function updateListLinks() {
     const date = listConfig.date.toISOString().split("T")[0]
-    const l = `${location.origin}/api/list?date=${date}&start_rank=${listConfig.startRank}&end_rank=${listConfig.endRank}`
+    const applicationRoot = window.APPLICATION_ROOT || ""
+    const l = `${location.origin}${applicationRoot}/api/list?date=${date}&start_rank=${listConfig.startRank}&end_rank=${listConfig.endRank}`
 
     listDownloadBtn.href = l
 

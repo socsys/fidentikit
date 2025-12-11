@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <div class="text-center">
+        <div class="mb-5 mt-5">
+            <img src="{{ url_for('static', filename='Surrey-380_University-Logo-Blue_Gold.png') }}" width="200px" height="400px" alt="University of Surrey Logo">
+        </div>
+
+        <div class="mb-5">
+            <h1>Why am I receiving HTTP requests from this machine?</h1>
+            <p>These HTTP requests are part of an Internet-wide passkey authentication research study being conducted by Networks and Systems (NetSys) group at the <a href="https://www.surrey.ac.uk/">University of Surrey</a>, United Kingdom. This research involves making benign HTTP requests to every domain in the <a href="https://tranco-list.eu/">Tranco top sites ranking</a>. By measuring the entire list of the most popular 1 million domains, we are able to study global trends in web security and passkey adoption.</p>
+            <p>We will never attempt to exploit security problems, guess passwords, or change device configurations. We only receive data that is publicly visible to anyone who visits your website.
+            </p>
+            <p>We are using the <a href="https://playwright.dev/">Playwright automation framework</a> to facilitate some of these scans. Playwright has been used for <a href="https://scholar.google.com/scholar?q=%22playwright%22+%22web+security%22">dozens of peer-reviewed academic papers</a>.
+            </p>
+        </div>
+
+        <h1>Can I request that my website is excluded?</h1>
+        <p>To have your host or network excluded from future scans conducted by us, please contact <a href="mailto:p.pawankumarsharma@surrey.ac.uk">Prince B</a> and include the domain name you would like us to blacklist.</p>
+    </div>
+</div>
+{% endblock %}
+
+

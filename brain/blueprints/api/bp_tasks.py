@@ -621,7 +621,7 @@ def store_task_response(task_name):
     if task_name == "landscape_analysis":
         collection_name = "landscape_analysis"
     elif task_name == "passkey_analysis":
-        collection_name = "passkey_analysis_tres"
+        collection_name = "passkey_analysis"
     else:
         collection_name = f"{task_name}_tres"
     

@@ -1,6 +1,6 @@
 const api = {
 
-    endpoint: `${location.origin}/api`,
+    endpoint: `${location.origin}${(window.APPLICATION_ROOT || "")}/api`,
 
     call: (path, method="GET", headers=undefined, body=undefined, showProgress=true) => {
         if (pushProgress && showProgress) pushProgress()
@@ -200,52 +200,45 @@ const api = {
         return api.call(url)
     },
 
-    /* stats: sso */
+    statsScansUniqueIdps: (scanIDs, tagNames) => {
+        let url = "/stats/scans/unique_idps?"
+        scanIDs.forEach(sid => url += `scan_id=${sid}&`)
+        tagNames.forEach(tn => url += `tag_name=${tn}&`)
+        return api.call(url)
+    },
 
-    statsSSO: (scanID, tagName) => {
-        let url = "/stats/sso"
+    /* stats: passkey */
+
+    statsPasskey: (scanID, tagName) => {
+        let url = "/stats/passkey"
         if (scanID) url += `?scan_id=${scanID}`
         if (tagName) url += `?tag_name=${tagName}`
         return api.call(url)
     },
 
-    statsSSOIdP: (scanID, tagName) => {
-        let url = "/stats/sso/idp"
+    statsPasskeyDetectionMethods: (scanID, tagName) => {
+        let url = "/stats/passkey/detection_methods"
         if (scanID) url += `?scan_id=${scanID}`
         if (tagName) url += `?tag_name=${tagName}`
         return api.call(url)
     },
 
-    statsSSORank: (scanID, tagName) => {
-        let url = "/stats/sso/rank"
+    statsPasskeyRank: (scanID, tagName) => {
+        let url = "/stats/passkey/rank"
         if (scanID) url += `?scan_id=${scanID}`
         if (tagName) url += `?tag_name=${tagName}`
         return api.call(url)
     },
 
-    statsSSOElementCoordinates: (scanID, tagName) => {
-        let url = "/stats/sso/element_coordinates"
+    statsPasskeyConfidence: (scanID, tagName) => {
+        let url = "/stats/passkey/confidence"
         if (scanID) url += `?scan_id=${scanID}`
         if (tagName) url += `?tag_name=${tagName}`
         return api.call(url)
     },
 
-    statsSSOIntegration: (scanID, tagName) => {
-        let url = "/stats/sso/integration"
-        if (scanID) url += `?scan_id=${scanID}`
-        if (tagName) url += `?tag_name=${tagName}`
-        return api.call(url)
-    },
-
-    statsSSOFrame: (scanID, tagName) => {
-        let url = "/stats/sso/frame"
-        if (scanID) url += `?scan_id=${scanID}`
-        if (tagName) url += `?tag_name=${tagName}`
-        return api.call(url)
-    },
-
-    statsSSORecognitionStrategy: (scanID, tagName) => {
-        let url = "/stats/sso/recognition_strategy"
+    statsPasskeyWebAuthnAPI: (scanID, tagName) => {
+        let url = "/stats/passkey/webauthn_api"
         if (scanID) url += `?scan_id=${scanID}`
         if (tagName) url += `?tag_name=${tagName}`
         return api.call(url)

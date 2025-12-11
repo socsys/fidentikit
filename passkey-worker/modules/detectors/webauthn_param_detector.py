@@ -189,13 +189,13 @@ class WebAuthnParamDetector:
             return []
         
         events = self.cdp_manager.get_events()
-        
         if events:
             logger.info(f"Retrieved {len(events)} CDP WebAuthn events")
-            for i, event in enumerate(events, 1):
+            for i, event in enumerate(events[:5], 1):
                 logger.info(f"  Event {i}: {event.get('type')}")
-        
-        return events
+            # Cap events to avoid huge payloads
+            return events[:50]
+        return []
 
     def detect_qr_code(self) -> Dict[str, Any]:
         """

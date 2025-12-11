@@ -1,0 +1,43 @@
+{
+    "mfa": [ // Multi-Factor Authentication mechanisms
+        {
+            "mechanism": "mfa",
+            "detected": true,
+            "mfa_type": "TOTP|SMS|EMAIL|PUSH|QR|CUSTOM", // type of MFA
+            "confidence": "HIGH|MEDIUM|LOW|NONE",
+            "indicators": ["OTP input field", "MFA context: TOTP"], // detection indicators
+            "login_page_url": "https://www.shop.com/login",
+            "element_coordinates_x": 13.37,
+            "element_coordinates_y": 13.37,
+            "element_width": 13.37,
+            "element_height": 13.37,
+            "element_inner_text": "",
+            "element_outer_html": "&lt;input type=\"text\" autocomplete=\"one-time-code\"&gt;",
+            "element_tree": ["INPUT", ..., "BODY", "HTML"],
+            "element_validity": "HIGH"
+        }
+    ],
+    "password": [ // Password-based authentication mechanisms
+        {
+            "mechanism": "password",
+            "detected": true,
+            "has_username": true,
+            "has_password": true,
+            "has_submit": true,
+            "login_flow_type": "single_page|multi_step|username_only|password_only",
+            "confidence": "HIGH|MEDIUM|LOW|NONE",
+            "indicators": ["Username and password fields", "Submit button present"],
+            "login_page_url": "https://www.shop.com/login",
+            "element_coordinates_x": 13.37,
+            "element_coordinates_y": 13.37,
+            "element_width": 13.37,
+            "element_height": 13.37,
+            "element_inner_text": "",
+            "element_outer_html": "&lt;input type=\"password\"&gt;",
+            "element_tree": ["INPUT", ..., "BODY", "HTML"],
+            "element_validity": "HIGH"
+        }
+    ]
+}
+
+

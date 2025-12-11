@@ -1,32 +1,187 @@
+"""
+MFAMechanism - Multi-Factor Authentication Detection
+Detects OTP, TOTP, SMS, Email, Push, and QR-based MFA implementations.
+
+Detection Categories:
+1. OTP_INPUT: Single or segmented OTP input fields
+2. TOTP_APP: Authenticator app references (Google/Microsoft Authenticator, Authy)
+3. SMS_EMAIL: SMS or email-based verification codes
+4. PUSH: Push notification-based authentication
+5. QR_CODE: QR code for authenticator setup
+"""
+
 import logging
-import traceback
-from typing import Dict, Any, Tuple
+import time
+from typing import Dict, Any, Tuple, List, Optional
 from playwright.sync_api import Page
 
 logger = logging.getLogger(__name__)
 
 
 class MFAMechanism:
+    """
+    Comprehensive MFA detection with reduced false positives.
+    Requires strong context signals before confirming MFA presence.
+    """
+    
+    # MFA types
+    MFA_TYPES = ["TOTP", "SMS", "EMAIL", "PUSH", "QR", "CUSTOM"]
     
     def __init__(self, page: Page):
         self.page = page
         self.url = None
+        
+        # Negative indicators - if present, we need stronger signals
         self.negative_indicators = [
             "password",
             "sign up",
             "register",
             "create account",
-            "passkey",
             "reset password",
             "zip code",
             "postal code",
             "credit card",
-            "pin",
+            "cvv",
             "ssn",
-            "social security"
+            "social security",
+            "birth",
+            "phone number",  # Could be sign-up, not MFA
         ]
         
+        # Strong MFA context indicators - these confirm we're in an MFA flow
+        self.strong_mfa_context = [
+            # 2FA/MFA explicit mentions
+            "two-factor authentication",
+            "2-factor authentication",
+            "multi-factor authentication",
+            "two-step verification",
+            "2-step verification",
+            "additional verification",
+            "verify your identity",
+            "verify it's you",
+            "second step",
+            
+            # Code delivery
+            "we sent a code",
+            "code sent to",
+            "enter the code we sent",
+            "check your phone for a code",
+            "check your email for a code",
+            "verification code sent",
+            
+            # Authenticator app
+            "use your authenticator app",
+            "open your authenticator app",
+            "authenticator app code",
+            "code from your app",
+            
+            # Push notification
+            "approve the sign-in",
+            "approve this login",
+            "push notification sent",
+            "check your device",
+            
+            # Security code
+            "security code",
+            "one-time code",
+            "one time code",
+            "6-digit code",
+            "verification code",
+        ]
+        
+        # TOTP-specific indicators
+        self.totp_indicators = [
+            "authenticator app",
+            "google authenticator",
+            "microsoft authenticator",
+            "authy",
+            "totp",
+            "time-based code",
+            "code from app",
+            "authenticator code",
+        ]
+        
+        # SMS-specific indicators  
+        self.sms_indicators = [
+            "text message",
+            "sms",
+            "sent to your phone",
+            "sent to your mobile",
+            "phone number ending in",
+            "mobile ending in",
+            "code via text",
+            "code by text",
+        ]
+        
+        # Email-specific indicators
+        self.email_indicators = [
+            "sent to your email",
+            "check your inbox",
+            "check your email",
+            "email ending in",
+            "code via email",
+            "email verification",
+        ]
+        
+        # Push-specific indicators
+        self.push_indicators = [
+            "push notification",
+            "approve sign-in",
+            "approve login",
+            "duo push",
+            "okta verify",
+            "check your device",
+            "tap approve",
+        ]
+        
+        # High-confidence OTP input selectors
+        self.otp_selectors_high = [
+            'input[autocomplete="one-time-code"]',
+            'input[name="otp"]',
+            'input[name="otpCode"]',
+            'input[name="verificationCode"]',
+            'input[name="oneTimeCode"]',
+            'input[name="totp"]',
+            'input[name="mfaCode"]',
+            'input[name="2faCode"]',
+            'input[id*="otp" i]',
+            'input[id*="mfa" i]',
+            'input[id*="2fa" i]',
+            'input[id*="verification-code" i]',
+            'input[aria-label*="verification code" i]',
+            'input[aria-label*="one time code" i]',
+            'input[aria-label*="otp" i]',
+            'input[placeholder*="verification code" i]',
+            'input[placeholder*="one time code" i]',
+        ]
+        
+        # Medium-confidence OTP input selectors
+        self.otp_selectors_medium = [
+            'input[name="code"]',
+            'input[placeholder*="code" i][maxlength="6"]',
+            'input[placeholder*="code" i][maxlength="8"]',
+            'input[aria-label*="code" i][maxlength="6"]',
+            'input[type="tel"][maxlength="6"]',
+            'input[type="number"][maxlength="6"]',
+            'input[inputmode="numeric"][maxlength="6"]',
+        ]
+        
+        # Segmented OTP container selectors
+        self.segmented_otp_containers = [
+            'div[class*="otp" i]',
+            'div[class*="verification" i]',
+            'div[class*="code-input" i]',
+            'div[class*="mfa" i]',
+            'div[class*="2fa" i]',
+            'div[id*="otp" i]',
+            'div[id*="verification" i]',
+        ]
+
     def detect(self, url: str) -> Dict[str, Any]:
+        """
+        Detect MFA/2FA on the page with high accuracy.
+        Returns structured result compatible with landscape analysis.
+        """
         self.url = url
         logger.info(f"Detecting MFA/2FA on: {url}")
         
@@ -36,6 +191,7 @@ class MFAMechanism:
             "mfa_type": None,
             "confidence": "NONE",
             "indicators": [],
+            "detection_signals": [],
             "login_page_url": url,
             "element_coordinates_x": None,
             "element_coordinates_y": None,
@@ -47,427 +203,477 @@ class MFAMechanism:
             "element_validity": "NONE"
         }
         
-        # Check for negative indicators first - if present, be extra cautious
-        try:
-            page_text = self.page.content().lower()
-            has_negative_indicators = any(indicator in page_text for indicator in self.negative_indicators)
-        except:
-            has_negative_indicators = False
+        # Wait for page to be ready
+        self._wait_for_page_ready()
         
-        # If negative indicators are present, we need at least two strong signals to confirm MFA
-        required_signals = 2 if has_negative_indicators else 1
+        # Check for negative indicators
+        has_negative = self._check_negative_indicators()
+        required_signals = 2 if has_negative else 1
+        
+        # Track detection signals
         signals_found = 0
+        detection_signals = []
         
-        # First check if we're in a clear MFA context
-        strong_mfa_context = self._has_strong_mfa_context()
-        if strong_mfa_context:
+        # 1. Check for strong MFA context first
+        mfa_context = self._check_mfa_context()
+        if mfa_context["found"]:
             signals_found += 1
-            result["indicators"].append("MFA context")
-            
-        # Try to detect OTP input fields with high confidence
+            detection_signals.append(f"MFA context: {mfa_context['type']}")
+            result["mfa_type"] = mfa_context["type"]
+        
+        # 2. Detect OTP input fields
         otp_result = self._detect_otp_inputs()
-        otp_input_found = otp_result[0]
-        otp_confidence = otp_result[1]
-        otp_type = otp_result[2]
-        
-        if otp_input_found:
-            if otp_confidence == "HIGH" or (otp_confidence == "MEDIUM" and strong_mfa_context):
+        if otp_result["found"]:
+            otp_confidence = otp_result["confidence"]
+            
+            # High confidence OTP or medium with context = count as signal
+            if otp_confidence == "HIGH" or (otp_confidence == "MEDIUM" and mfa_context["found"]):
                 signals_found += 1
-                result["indicators"].append("OTP input field")
-                result["mfa_type"] = otp_type
-                if otp_result[3]:  # element_info
-                    el_info = otp_result[3]
-                    result["element_coordinates_x"] = el_info.get("x")
-                    result["element_coordinates_y"] = el_info.get("y")
-                    result["element_width"] = el_info.get("width")
-                    result["element_height"] = el_info.get("height")
-                    result["element_inner_text"] = el_info.get("inner_text")
-                    result["element_outer_html"] = el_info.get("outer_html")
-                    result["element_tree"] = el_info.get("element_tree", [])
-                    result["element_validity"] = "HIGH"
+                detection_signals.append(f"OTP input: {otp_result['type']}")
+                
+                if not result["mfa_type"]:
+                    result["mfa_type"] = otp_result.get("mfa_type") or self._determine_type()
+                
+                # Update element info
+                if otp_result.get("element_info"):
+                    self._update_element_info(result, otp_result["element_info"])
         
-        # If we haven't found enough signals, try to detect MFA keywords on the page
+        # 3. Check for MFA text indicators on page
         if signals_found < required_signals:
-            mfa_text_found, mfa_confidence, mfa_text_type = self._detect_mfa_text()
-            if mfa_text_found:
-                if mfa_confidence == "HIGH" or (mfa_confidence == "MEDIUM" and strong_mfa_context):
+            text_result = self._detect_mfa_text()
+            if text_result["found"]:
+                text_confidence = text_result["confidence"]
+                
+                if text_confidence == "HIGH" or (text_confidence == "MEDIUM" and mfa_context["found"]):
                     signals_found += 1
-                    result["indicators"].append("MFA text")
+                    detection_signals.append(f"MFA text: {text_result['mfa_type']}")
+                    
                     if not result["mfa_type"]:
-                        result["mfa_type"] = mfa_text_type
+                        result["mfa_type"] = text_result["mfa_type"]
         
-        # Finally check for QR code images only if we have supporting context
-        if signals_found < required_signals and strong_mfa_context:
+        # 4. Check for QR code (only in authenticator context)
+        if signals_found < required_signals and mfa_context["found"]:
             qr_found = self._detect_qr_code()
             if qr_found:
                 signals_found += 1
-                result["indicators"].append("QR code")
+                detection_signals.append("QR code for authenticator setup")
                 if not result["mfa_type"]:
                     result["mfa_type"] = "QR"
         
-        # Only report MFA if we found enough signals
-        # Be more lenient - if we find an OTP field, that's a strong signal
+        # Determine final detection result
+        result["detection_signals"] = detection_signals
+        
         if signals_found >= required_signals:
             result["detected"] = True
             result["confidence"] = "HIGH" if signals_found > 1 else "MEDIUM"
+            result["indicators"] = detection_signals[:5]
             if not result["mfa_type"]:
                 result["mfa_type"] = self._determine_type()
-        elif otp_input_found:
-            # If we find an OTP field, that's a strong signal even without other indicators
+        elif otp_result.get("found"):
+            # OTP field alone is a strong signal even without context
+            result["detected"] = True
+            result["confidence"] = otp_result["confidence"]
+            result["indicators"] = [f"OTP input field ({otp_result['type']})"]
+            if otp_result.get("element_info"):
+                self._update_element_info(result, otp_result["element_info"])
+            if not result["mfa_type"]:
+                result["mfa_type"] = otp_result.get("mfa_type") or self._determine_type()
+        elif mfa_context["found"]:
+            # Strong MFA context alone
             result["detected"] = True
             result["confidence"] = "MEDIUM"
-            result["indicators"].append("OTP input field")
+            result["indicators"] = [f"MFA context ({mfa_context['type']})"]
             if not result["mfa_type"]:
-                result["mfa_type"] = otp_type or self._determine_type()
-            if otp_result[3]:  # element_info
-                el_info = otp_result[3]
-                result["element_coordinates_x"] = el_info.get("x")
-                result["element_coordinates_y"] = el_info.get("y")
-                result["element_width"] = el_info.get("width")
-                result["element_height"] = el_info.get("height")
-                result["element_inner_text"] = el_info.get("inner_text")
-                result["element_outer_html"] = el_info.get("outer_html")
-                result["element_tree"] = el_info.get("element_tree", [])
-                result["element_validity"] = "HIGH"
-        elif strong_mfa_context:
-            # If we have strong MFA context, report it even without OTP field
-            result["detected"] = True
-            result["confidence"] = "MEDIUM"
-            if not result["mfa_type"]:
-                result["mfa_type"] = self._determine_type()
+                result["mfa_type"] = mfa_context["type"]
         
-        logger.info(f"MFA detection final result: detected={result['detected']}, signals={signals_found}, required={required_signals}, indicators={result['indicators']}")
+        logger.info(f"MFA detection result: detected={result['detected']}, type={result['mfa_type']}, confidence={result['confidence']}")
         return result
-    
-    def _has_strong_mfa_context(self) -> bool:
-        """Check if the page has clear indicators of being in an MFA flow"""
+
+    def _wait_for_page_ready(self):
+        """Wait for page to be ready for detection."""
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=5000)
+        except:
+            pass
+        
+        # Wait for input fields to appear
+        try:
+            self.page.wait_for_selector('input[type="text"], input[type="number"], input[maxlength]', timeout=5000, state="attached")
+        except:
+            pass
+        
+        time.sleep(1)
+
+    def _check_negative_indicators(self) -> bool:
+        """Check if page has negative indicators that require stronger MFA signals."""
+        try:
+            page_text = self.page.content().lower()
+            for indicator in self.negative_indicators:
+                if indicator in page_text:
+                    logger.debug(f"Found negative indicator: {indicator}")
+                    return True
+            return False
+        except:
+            return False
+
+    def _check_mfa_context(self) -> Dict[str, Any]:
+        """Check if page is clearly in an MFA flow."""
         try:
             page_text = self.page.content().lower()
             
-            strong_indicators = [
-                "two-factor authentication",
-                "2-factor authentication", 
-                "multi-factor authentication",
-                "two-step verification",
-                "2-step verification",
-                "additional security step",
-                "verify your identity",
-                "authentication code"
-            ]
-            
-            for indicator in strong_indicators:
+            # Check for strong MFA context
+            for indicator in self.strong_mfa_context:
                 if indicator in page_text:
-                    logger.debug(f"Found strong MFA indicator: {indicator}")
-                    return True
+                    mfa_type = self._determine_type_from_text(page_text)
+                    logger.debug(f"Found strong MFA context: {indicator}")
+                    return {"found": True, "type": mfa_type, "indicator": indicator}
             
-            verification_context = any(ctx in page_text for ctx in [
-                "we sent a code to your",
-                "enter the code we sent",
-                "verification code sent",
-                "check your phone for a code",
-                "check your email for a code",
-                "use your authenticator app"
-            ])
-            
-            if verification_context:
-                logger.debug("Found verification context explaining code delivery")
-                return True
-                
-            return False
+            return {"found": False, "type": None}
         except Exception as e:
             logger.debug(f"Error checking MFA context: {e}")
-            return False
+            return {"found": False, "type": None}
 
-    def _detect_otp_inputs(self) -> Tuple[bool, str, str, Dict[str, Any]]:
-        """Detect OTP input fields that suggest MFA/2FA. Returns: (found, confidence, type, element_info)"""
+    def _determine_type_from_text(self, page_text: str) -> str:
+        """Determine MFA type from page text."""
+        # Check TOTP
+        for indicator in self.totp_indicators:
+            if indicator in page_text:
+                return "TOTP"
+        
+        # Check SMS
+        for indicator in self.sms_indicators:
+            if indicator in page_text:
+                return "SMS"
+        
+        # Check Email
+        for indicator in self.email_indicators:
+            if indicator in page_text:
+                return "EMAIL"
+        
+        # Check Push
+        for indicator in self.push_indicators:
+            if indicator in page_text:
+                return "PUSH"
+        
+        return "CUSTOM"
+
+    def _detect_otp_inputs(self) -> Dict[str, Any]:
+        """Detect OTP input fields."""
         try:
             from common.modules.helper.detection import DetectionHelper
             
-            # Wait for page to be ready
-            try:
-                self.page.wait_for_load_state("domcontentloaded", timeout=5000)
-            except:
-                pass
-            
-            # Wait for input fields to appear (for dynamic pages)
-            try:
-                self.page.wait_for_selector('input[type="text"], input[type="number"], input[maxlength]', timeout=10000, state="attached")
-            except:
-                pass
-            
-            # Additional wait for dynamic content
-            import time
-            time.sleep(2)
-            
-            page_text = self.page.content().lower()
-            
-            high_confidence_selectors = [
-                'input[autocomplete="one-time-code"]',
-                'input[name="otp"]',
-                'input[name="verificationCode"]',
-                'input[aria-label*="verification code" i]',
-                'input[placeholder*="verification code" i]',
-            ]
-            
-            medium_confidence_selectors = [
-                'input[name="code"]',
-                'input[placeholder*="code" i][maxlength="6"]',
-                'input[placeholder*="code" i][maxlength="8"]',
-                'input[placeholder*="code" i][maxlength="4"]',
-            ]
-            
-            segmented_otp_selectors = [
-                'div[class*="otp"] input[maxlength="1"]',
-                'div[class*="verification"] input[maxlength="1"]',
-                'div[class*="authCode"] input[maxlength="1"]'
-            ]
-            
-            # Check high-confidence selectors first
-            for selector in high_confidence_selectors:
+            # Try high-confidence selectors first
+            for selector in self.otp_selectors_high:
                 try:
                     elements = self.page.query_selector_all(selector)
-                    if elements:
-                        logger.debug(f"Found high-confidence OTP input with selector: {selector}")
-                        element = elements[0]
-                        rect = element.bounding_box()
-                        if rect:
-                            x = rect['x'] + rect['width'] / 2
-                            y = rect['y'] + rect['height'] / 2
-                            element_tree, _ = DetectionHelper.get_coordinate_metadata(self.page, x, y)
-                            element_info = {
-                                "x": rect['x'],
-                                "y": rect['y'],
-                                "width": rect['width'],
-                                "height": rect['height'],
-                                "inner_text": element.get_attribute("value") or element.get_attribute("placeholder") or "",
-                                "outer_html": element.evaluate("el => el.outerHTML"),
-                                "element_tree": element_tree
-                            }
-                            return True, "HIGH", self._determine_type(), element_info
+                    visible_elements = [el for el in elements if self._is_element_visible(el)]
+                    
+                    if visible_elements:
+                        element = visible_elements[0]
+                        element_info = self._get_element_info(element)
+                        logger.debug(f"Found high-confidence OTP input: {selector}")
+                        return {
+                            "found": True,
+                            "confidence": "HIGH",
+                            "type": "single_input",
+                            "mfa_type": self._determine_type(),
+                            "element_info": element_info
+                        }
                 except Exception as e:
-                    logger.debug(f"Error finding OTP input with selector {selector}: {e}")
+                    logger.debug(f"Error with selector {selector}: {e}")
             
-            # Check medium-confidence selectors
-            for selector in medium_confidence_selectors:
+            # Try medium-confidence selectors
+            for selector in self.otp_selectors_medium:
                 try:
                     elements = self.page.query_selector_all(selector)
-                    if elements:
-                        element = elements[0]
-                        rect = element.bounding_box()
-                        if rect:
-                            x = rect['x'] + rect['width'] / 2
-                            y = rect['y'] + rect['height'] / 2
-                            element_tree, _ = DetectionHelper.get_coordinate_metadata(self.page, x, y)
-                            element_info = {
-                                "x": rect['x'],
-                                "y": rect['y'],
-                                "width": rect['width'],
-                                "height": rect['height'],
-                                "inner_text": element.get_attribute("value") or element.get_attribute("placeholder") or "",
-                                "outer_html": element.evaluate("el => el.outerHTML"),
-                                "element_tree": element_tree
-                            }
-                            return True, "MEDIUM", self._determine_type(), element_info
+                    visible_elements = [el for el in elements if self._is_element_visible(el)]
+                    
+                    if visible_elements:
+                        element = visible_elements[0]
+                        element_info = self._get_element_info(element)
+                        logger.debug(f"Found medium-confidence OTP input: {selector}")
+                        return {
+                            "found": True,
+                            "confidence": "MEDIUM",
+                            "type": "single_input",
+                            "mfa_type": self._determine_type(),
+                            "element_info": element_info
+                        }
                 except Exception as e:
-                    logger.debug(f"Error finding OTP input with selector {selector}: {e}")
+                    logger.debug(f"Error with selector {selector}: {e}")
             
-            # Check segmented inputs if we have verification context
-            verification_context = self._has_strong_mfa_context()
-            if verification_context:
-                for selector in segmented_otp_selectors:
-                    try:
-                        elements = self.page.query_selector_all(selector)
-                        if elements and len(elements) >= 4:
-                            element = elements[0]
-                            rect = element.bounding_box()
-                            if rect:
-                                x = rect['x'] + rect['width'] / 2
-                                y = rect['y'] + rect['height'] / 2
-                                element_tree, _ = DetectionHelper.get_coordinate_metadata(self.page, x, y)
-                                element_info = {
-                                    "x": rect['x'],
-                                    "y": rect['y'],
-                                    "width": rect['width'],
-                                    "height": rect['height'],
-                                    "inner_text": "",
-                                    "outer_html": element.evaluate("el => el.outerHTML"),
-                                    "element_tree": element_tree
-                                }
-                                return True, "MEDIUM", self._determine_type(), element_info
-                    except Exception as e:
-                        logger.debug(f"Error finding segmented OTP input with selector {selector}: {e}")
+            # Try segmented OTP detection
+            segmented_result = self._detect_segmented_otp()
+            if segmented_result["found"]:
+                return segmented_result
+            
+            return {"found": False, "confidence": "NONE", "type": None}
+            
         except Exception as e:
             logger.debug(f"Error in OTP detection: {e}")
-            
-        return False, "", "", None
+            return {"found": False, "confidence": "NONE", "type": None, "error": str(e)}
 
-    def _detect_mfa_text(self) -> Tuple[bool, str, str]:
-        """Detect text on the page indicating MFA/2FA. Returns: (found, confidence, type)"""
+    def _detect_segmented_otp(self) -> Dict[str, Any]:
+        """Detect segmented OTP inputs (multiple single-digit fields)."""
+        try:
+            # Look for container with multiple single-digit inputs
+            for container_selector in self.segmented_otp_containers:
+                try:
+                    containers = self.page.query_selector_all(container_selector)
+                    
+                    for container in containers:
+                        inputs = container.query_selector_all('input[maxlength="1"]')
+                        visible_inputs = [inp for inp in inputs if self._is_element_visible(inp)]
+                        
+                        # Segmented OTP typically has 4-8 inputs
+                        if 4 <= len(visible_inputs) <= 8:
+                            element_info = self._get_element_info(visible_inputs[0])
+                            logger.debug(f"Found segmented OTP with {len(visible_inputs)} inputs")
+                            return {
+                                "found": True,
+                                "confidence": "HIGH",
+                                "type": f"segmented_{len(visible_inputs)}_digit",
+                                "mfa_type": self._determine_type(),
+                                "element_info": element_info
+                            }
+                except:
+                    continue
+            
+            # Fallback: look for adjacent single-digit inputs
+            result = self.page.evaluate('''
+                () => {
+                    const inputs = Array.from(document.querySelectorAll('input[maxlength="1"]'));
+                    const visibleInputs = inputs.filter(el => {
+                        const rect = el.getBoundingClientRect();
+                        const style = window.getComputedStyle(el);
+                        return rect.width > 0 && rect.height > 0 && 
+                               style.display !== 'none' && style.visibility !== 'hidden';
+                    });
+                    
+                    // Check if inputs are adjacent (likely segmented OTP)
+                    if (visibleInputs.length >= 4 && visibleInputs.length <= 8) {
+                        // Check if they're horizontally aligned
+                        const rects = visibleInputs.map(el => el.getBoundingClientRect());
+                        const yPositions = rects.map(r => Math.round(r.y));
+                        const sameRow = yPositions.every(y => Math.abs(y - yPositions[0]) < 20);
+                        
+                        if (sameRow) {
+                            const firstRect = rects[0];
+                            return {
+                                found: true,
+                                count: visibleInputs.length,
+                                x: firstRect.x,
+                                y: firstRect.y,
+                                width: firstRect.width,
+                                height: firstRect.height,
+                                outer_html: visibleInputs[0].outerHTML.substring(0, 500)
+                            };
+                        }
+                    }
+                    
+                    return { found: false };
+                }
+            ''')
+            
+            if result.get("found"):
+                return {
+                    "found": True,
+                    "confidence": "MEDIUM",
+                    "type": f"segmented_{result['count']}_digit",
+                    "mfa_type": self._determine_type(),
+                    "element_info": {
+                        "x": result.get("x"),
+                        "y": result.get("y"),
+                        "width": result.get("width"),
+                        "height": result.get("height"),
+                        "outer_html": result.get("outer_html"),
+                        "inner_text": "",
+                        "element_tree": []
+                    }
+                }
+            
+            return {"found": False, "confidence": "NONE", "type": None}
+            
+        except Exception as e:
+            logger.debug(f"Error in segmented OTP detection: {e}")
+            return {"found": False, "confidence": "NONE", "type": None}
+
+    def _detect_mfa_text(self) -> Dict[str, Any]:
+        """Detect MFA-related text on page."""
         try:
             page_text = self.page.content().lower()
             
-            high_confidence_indicators = {
+            # High-confidence text patterns
+            high_confidence_patterns = {
                 "TOTP": [
-                    "authenticator app code",
+                    "code from your authenticator app",
                     "google authenticator code",
                     "microsoft authenticator code",
-                    "authy code",
-                    "totp code",
-                    "use your authenticator app",
-                    "open your authenticator app"
+                    "enter the code from your app",
+                    "open your authenticator app",
                 ],
                 "SMS": [
-                    "verification code via sms", 
-                    "verification code by text", 
                     "code sent to your phone",
+                    "verification code via sms",
                     "text message with a code",
                     "sms verification code",
-                    "code sent to phone number",
-                    "we've sent a text to"
+                    "we sent a text to",
                 ],
                 "EMAIL": [
-                    "verification code via email",
                     "code sent to your email",
+                    "verification code via email",
                     "check your inbox for a code",
-                    "we've sent a code to your email",
-                    "email verification code"
+                    "we sent an email to",
+                ],
+                "PUSH": [
+                    "push notification sent",
+                    "approve the sign-in request",
+                    "duo push sent",
+                    "check your phone to approve",
                 ]
             }
             
-            medium_confidence_indicators = {
-                "TOTP": [
-                    "authenticator", 
-                    "google authenticator", 
-                    "microsoft authenticator", 
-                    "authy", 
-                    "totp"
-                ],
-                "SMS": [
-                    "sms code",
-                    "text message code",
-                    "via text message"
-                ],
-                "EMAIL": [
-                    "email code", 
-                    "sent to your email", 
-                    "check your inbox"
-                ]
+            for mfa_type, patterns in high_confidence_patterns.items():
+                for pattern in patterns:
+                    if pattern in page_text:
+                        return {"found": True, "confidence": "HIGH", "mfa_type": mfa_type}
+            
+            # Medium-confidence patterns
+            medium_confidence_patterns = {
+                "TOTP": ["authenticator", "totp"],
+                "SMS": ["sms code", "text message"],
+                "EMAIL": ["email code", "check your inbox"],
             }
             
-            # Check high-confidence indicators first
-            for mfa_type, indicators in high_confidence_indicators.items():
-                for indicator in indicators:
-                    if indicator in page_text:
-                        logger.debug(f"Found high-confidence {mfa_type} indicator: {indicator}")
-                        return True, "HIGH", mfa_type
-            
-            # Check medium-confidence indicators only if we have verification context
-            verification_context = any(ctx in page_text for ctx in [
-                "enter the code",
+            # Only count medium patterns if we have verification context
+            has_verification_context = any(ctx in page_text for ctx in [
                 "verification code",
+                "enter the code",
                 "security code",
-                "one-time code",
-                "2fa code",
-                "two-factor",
-                "verify your identity"
             ])
             
-            if verification_context:
-                for mfa_type, indicators in medium_confidence_indicators.items():
-                    for indicator in indicators:
-                        if indicator in page_text:
-                            logger.debug(f"Found medium-confidence {mfa_type} indicator with verification context: {indicator}")
-                            return True, "MEDIUM", mfa_type
-        except Exception as e:
-            logger.debug(f"Error detecting MFA text: {e}")
+            if has_verification_context:
+                for mfa_type, patterns in medium_confidence_patterns.items():
+                    for pattern in patterns:
+                        if pattern in page_text:
+                            return {"found": True, "confidence": "MEDIUM", "mfa_type": mfa_type}
             
-        return False, "", ""
+            return {"found": False, "confidence": "NONE", "mfa_type": None}
+            
+        except Exception as e:
+            logger.debug(f"Error in MFA text detection: {e}")
+            return {"found": False, "confidence": "NONE", "mfa_type": None}
 
     def _detect_qr_code(self) -> bool:
-        """Detect QR code images on the page, but only if in MFA context"""
+        """Detect QR code for authenticator setup (only in authenticator context)."""
         try:
             page_text = self.page.content().lower()
-            authenticator_context = any(term in page_text for term in [
+            
+            # Must have authenticator context
+            has_auth_context = any(term in page_text for term in [
                 "scan qr code",
-                "scan this code", 
+                "scan this code",
                 "authenticator app",
-                "google authenticator", 
-                "microsoft authenticator"
+                "google authenticator",
+                "microsoft authenticator",
             ])
             
-            if not authenticator_context:
-                logger.debug("No authenticator app context for QR code")
+            if not has_auth_context:
                 return False
             
+            # Look for QR code elements
             qr_selectors = [
                 'img[alt*="qr" i]',
                 'img[src*="qr" i]',
                 'img[class*="qr" i]',
                 'canvas[id*="qr" i]',
                 'div[class*="qr" i] img',
-                'div[class*="qrcode" i]'
+                'svg[class*="qr" i]',
             ]
             
             for selector in qr_selectors:
                 try:
                     elements = self.page.query_selector_all(selector)
-                    if elements:
-                        for element in elements:
-                            box = element.bounding_box()
-                            if box:
-                                width = box['width']
-                                height = box['height']
-                                if width > 50 and height > 50:
-                                    aspect_ratio = width / height
-                                    if 0.7 <= aspect_ratio <= 1.3:
-                                        logger.debug(f"Found QR code with selector: {selector}")
-                                        return True
-                except Exception as e:
-                    logger.debug(f"Error finding QR code with selector {selector}: {e}")
+                    for element in elements:
+                        box = element.bounding_box()
+                        if box:
+                            # QR codes are typically square and 50-300px
+                            width = box['width']
+                            height = box['height']
+                            if 50 < width < 350 and 50 < height < 350:
+                                aspect_ratio = width / height
+                                if 0.8 <= aspect_ratio <= 1.2:
+                                    logger.debug(f"Found QR code with selector: {selector}")
+                                    return True
+                except:
+                    continue
+            
+            return False
+            
         except Exception as e:
             logger.debug(f"Error in QR code detection: {e}")
-            
-        return False
-    
+            return False
+
     def _determine_type(self) -> str:
-        """Determine the type of MFA based on page context"""
+        """Determine MFA type from page context."""
         try:
             page_text = self.page.content().lower()
-            
-            if any(keyword in page_text for keyword in [
-                "authenticator app", 
-                "google authenticator", 
-                "microsoft authenticator", 
-                "authy", 
-                "totp"
-            ]):
-                return "TOTP"
-            elif any(phrase in page_text for phrase in [
-                "verification code via sms", 
-                "verification code by text", 
-                "sent to your phone",
-                "text message with a code",
-                "sms verification code",
-                "security code via text",
-                "we sent a text to",
-                "mobile number",
-                "phone number ending in"
-            ]):
-                return "SMS"
-            elif any(phrase in page_text for phrase in [
-                "sent to your email",
-                "check your inbox",
-                "check your email for a code",
-                "verification code via email",
-                "email address ending in"
-            ]):
-                return "EMAIL"
-            elif any(keyword in page_text for keyword in ["scan qr code", "scan this code", "scan with authenticator"]):
-                return "QR"
-            else:
-                return "CUSTOM"
-        except Exception as e:
-            logger.debug(f"Error determining MFA type: {e}")
+            return self._determine_type_from_text(page_text)
+        except:
             return "CUSTOM"
 
+    def _is_element_visible(self, element) -> bool:
+        """Check if element is visible."""
+        try:
+            box = element.bounding_box()
+            if not box:
+                return False
+            return box['width'] > 0 and box['height'] > 0
+        except:
+            return False
 
+    def _get_element_info(self, element) -> Dict[str, Any]:
+        """Get element information for result."""
+        try:
+            from common.modules.helper.detection import DetectionHelper
+            
+            box = element.bounding_box()
+            if not box:
+                return None
+            
+            outer_html = element.evaluate("el => el.outerHTML")
+            placeholder = element.get_attribute("placeholder") or ""
+            value = element.get_attribute("value") or ""
+            
+            x = box['x'] + box['width'] / 2
+            y = box['y'] + box['height'] / 2
+            
+            try:
+                element_tree, _ = DetectionHelper.get_coordinate_metadata(self.page, x, y)
+            except:
+                element_tree = []
+            
+            return {
+                "x": box['x'],
+                "y": box['y'],
+                "width": box['width'],
+                "height": box['height'],
+                "inner_text": value or placeholder,
+                "outer_html": outer_html[:500] if outer_html else "",
+                "element_tree": element_tree
+            }
+        except Exception as e:
+            logger.debug(f"Error getting element info: {e}")
+            return None
+
+    def _update_element_info(self, result: Dict, element_info: Dict):
+        """Update result with element information."""
+        if element_info:
+            result["element_coordinates_x"] = element_info.get("x")
+            result["element_coordinates_y"] = element_info.get("y")
+            result["element_width"] = element_info.get("width")
+            result["element_height"] = element_info.get("height")
+            result["element_inner_text"] = element_info.get("inner_text")
+            result["element_outer_html"] = element_info.get("outer_html")
+            result["element_tree"] = element_info.get("element_tree", [])
+            result["element_validity"] = "HIGH"

@@ -1,0 +1,19 @@
+{
+    "detected": true, // whether passkey was detected
+    "confidence": "HIGH|MEDIUM|LOW|NONE", // confidence level of detection
+    "detection_methods": ["UI_ELEMENT", "JS_API", "DOM_STRUCTURE"], // categories that detected passkey: UI_ELEMENT, DOM_STRUCTURE, JS_API, NETWORK, LIBRARY, ENTERPRISE
+    "indicators": ["[UI_ELEMENT] Button/link: \"Sign in with passkey\"", "[JS_API] Credential creation found"], // human-readable indicators
+    "webauthn_api_available": true, // whether WebAuthn API is available in browser context
+    "login_page_url": "https://www.shop.com/login", // url of the login page where passkey was detected
+    "login_page_strategy": "PATHS|CRAWLING|METASEARCH|SITEMAP|HOMEPAGE|ROBOTS|MANUAL", // strategy used to find this login page
+    "element_info": { // information about the detected passkey element
+        "coordinates_x": 13.37, // x coordinate of passkey button/element
+        "coordinates_y": 13.37, // y coordinate of passkey button/element
+        "width": 13.37, // width of passkey button/element
+        "height": 13.37, // height of passkey button/element
+        "inner_text": "Sign in with passkey", // inner text of passkey button/element
+        "outer_html": "&lt;button&gt;Sign in with passkey&lt;/button&gt;" // outer HTML of passkey button/element
+    }
+}
+
+

@@ -92,161 +92,100 @@
     const loadStats = {
 
         "landscape_analysis": ({scanID, tagName}) => {
-            api.statsSSO(scanID, tagName).then(d => {
+            api.statsPasskey(scanID, tagName).then(d => {
                 Object.assign(stats, d.data)
                 renderChart({
                     element: document.querySelector("#grid"),
                     masonry: masonry,
                     type: "pie",
-                    title: "SSO Support",
-                    subtitle: `Total: ${d.data.domains_all} Domains / ${d.data.buttons_all} Buttons`,
-                    labels: ["Not reachable", "SSO supported", "SSO not supported", "Other errors"],
+                    title: "Passkey Support",
+                    subtitle: `Total: ${d.data.domains_all} Domains`,
+                    labels: ["Not reachable", "Passkey supported", "Passkey not supported", "Other errors"],
                     datasets: [{
                         label: "Domains",
-                        data: [d.data.domains_not_reachable, d.data.domains_with_sso, d.data.domains_without_sso, d.data.domains_with_other_errors]
+                        data: [d.data.domains_not_reachable, d.data.domains_with_passkey, d.data.domains_without_passkey, d.data.domains_with_other_errors]
                     }]
                 })
             })
-            api.statsSSOIntegration(scanID, tagName).then(d => {
+            api.statsPasskeyDetectionMethods(scanID, tagName).then(d => {
                 Object.assign(stats, d.data)
                 renderChart({
                     element: document.querySelector("#grid"),
                     masonry: masonry,
                     type: "pie",
-                    title: "SSO Flows",
-                    labels: Object.keys(d.data.domains_flows),
+                    title: "Passkey Detection Methods",
+                    labels: Object.keys(d.data.domains_by_method),
                     datasets: [{
                         label: "Domains",
-                        data: Object.values(d.data.domains_flows)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_flows)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Integrations",
-                    labels: Object.keys(d.data.domains_integrations),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_integrations)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_integrations)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO SDKs",
-                    labels: Object.keys(d.data.domains_sdks),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_sdks)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_sdks)
+                        data: Object.values(d.data.domains_by_method)
                     }]
                 })
             })
-            api.statsSSOFrame(scanID, tagName).then(d => {
+            api.statsPasskeyConfidence(scanID, tagName).then(d => {
                 Object.assign(stats, d.data)
                 renderChart({
                     element: document.querySelector("#grid"),
                     masonry: masonry,
                     type: "pie",
-                    title: "SSO Frames",
-                    labels: Object.keys(d.data.domains_frames),
+                    title: "Passkey Detection Confidence",
+                    labels: Object.keys(d.data.domains_by_confidence),
                     datasets: [{
                         label: "Domains",
-                        data: Object.values(d.data.domains_frames)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_frames)
+                        data: Object.values(d.data.domains_by_confidence)
                     }]
                 })
             })
-            api.statsSSORank(scanID, tagName).then(d => {
+            api.statsPasskeyWebAuthnAPI(scanID, tagName).then(d => {
+                Object.assign(stats, d.data)
+                renderChart({
+                    element: document.querySelector("#grid"),
+                    masonry: masonry,
+                    type: "pie",
+                    title: "WebAuthn API Availability",
+                    labels: ["WebAuthn API Available", "WebAuthn API Not Available"],
+                    datasets: [{
+                        label: "Domains",
+                        data: [d.data.domains_with_api, d.data.domains_without_api]
+                    }]
+                })
+            })
+            api.statsPasskeyRank(scanID, tagName).then(d => {
                 Object.assign(stats, d.data)
                 renderChart({
                     element: document.querySelector("#grid"),
                     masonry: masonry,
                     type: "bar",
-                    title: "SSO by Rank",
-                    labels: Object.keys(d.data.domains_with_sso_by_rank),
+                    title: "Passkey by Rank",
+                    labels: Object.keys(d.data.domains_with_passkey_by_rank),
                     datasets: [{
                         label: "Domains",
-                        data: Object.values(d.data.domains_with_sso_by_rank)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_by_rank)
+                        data: Object.values(d.data.domains_with_passkey_by_rank)
                     }]
                 })
             })
-            api.statsSSOIdP(scanID, tagName).then(d => {
+            api.statsScansUniqueIdps(scanID ? [scanID] : [], tagName ? [tagName] : []).then(d => {
                 Object.assign(stats, d.data)
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "IdPs",
-                    labels: Object.keys(d.data.domains_idps),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_idps)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_idps)
-                    }]
-                })
-            })
-            api.statsSSORecognitionStrategy(scanID, tagName).then(d => {
-                Object.assign(stats, d.data)
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Recognition Strategy",
-                    labels: Object.keys(d.data.domains_recognition_strategy),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_recognition_strategy)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_recognition_strategy)
-                    }]
-                })
-            })
-            api.statsSSOElementCoordinates(scanID, tagName).then(d => {
-                Object.assign(stats, d.data)
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "scatter",
-                    title: "SSO Element Positions",
-                    datasets: [{
-                        label: "Element Position",
-                        data: d.data.map((ep) => {
-                            return {x: ep.x + ep.w/2, y: ep.y + ep.h/2}
-                        })
-                    }],
-                    options: {
-                        scales: {
-                            x: {
-                                min: 0,
-                                max: 1920
-                            },
-                            y: {
-                                min: 0,
-                                max: 1080,
-                                reverse: true
-                            }
+                if (Object.keys(d.data.idp_tuples_by_scans).length > 0) {
+                    // Aggregate IDPs across all scans
+                    const idpCounts = {}
+                    for (const scanId in d.data.idp_tuples_by_scans) {
+                        for (const tuple of d.data.idp_tuples_by_scans[scanId]) {
+                            const idpName = tuple[1] // idp_name is second element
+                            idpCounts[idpName] = (idpCounts[idpName] || 0) + 1
                         }
                     }
-                })
+                    renderChart({
+                        element: document.querySelector("#grid"),
+                        masonry: masonry,
+                        type: "pie",
+                        title: "Identity Providers",
+                        labels: Object.keys(idpCounts),
+                        datasets: [{
+                            label: "Domains",
+                            data: Object.values(idpCounts)
+                        }]
+                    })
+                }
             })
             api.statsLoginpageCandidatesByStrategy(scanID, tagName).then(d => {
                 Object.assign(stats, d.data)
@@ -406,138 +345,12 @@
                     element: document.querySelector("#grid"),
                     masonry: masonry,
                     type: "pie",
-                    title: "SSO Support",
-                    subtitle: `Total: ${d.data.domains_all} Domains / ${d.data.buttons_all} Buttons`,
-                    labels: ["Not reachable", "SSO supported", "Other logins supported", "No logins supported"],
+                    title: "Passkey Support",
+                    subtitle: `Total: ${d.data.domains_all} Domains`,
+                    labels: ["Not reachable", "Passkey supported", "Other logins supported", "No logins supported"],
                     datasets: [{
                         label: "Domains",
                         data: [d.data.domains_not_reachable, d.data.domains_with_sso, d.data.domains_with_login_without_sso, d.data.domains_without_login]
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Errors",
-                    labels: ["SSO with Errors", "SSO without Errors"],
-                    datasets: [{
-                        label: "Domains",
-                        data: [d.data.domains_with_sso_with_error, d.data.domains_with_sso_without_error]
-                    }, {
-                        label: "Buttons",
-                        data: [d.data.buttons_with_error, d.data.buttons_without_error]
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Interaction",
-                    labels: ["SSO with Interaction", "SSO without Interaction"],
-                    datasets: [{
-                        label: "Domains",
-                        data: [d.data.domains_with_sso_with_interaction, d.data.domains_with_sso_without_interaction]
-                    }, {
-                        label: "Buttons",
-                        data: [d.data.buttons_with_interaction, d.data.buttons_without_interaction]
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Flows",
-                    labels: Object.keys(d.data.domains_flows),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_flows)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_flows)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Frames",
-                    labels: Object.keys(d.data.domains_frames),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_frames)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_frames)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO Integrations",
-                    labels: Object.keys(d.data.domains_integrations),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_integrations)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_integrations)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "SSO SDKs",
-                    labels: Object.keys(d.data.domains_sdks),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_sdks)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_sdks)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "bar",
-                    title: "SSO by Rank",
-                    labels: Object.keys(d.data.domains_with_sso_by_rank),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_with_sso_by_rank)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_by_rank)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "IdPs",
-                    labels: Object.keys(d.data.domains_idps),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_idps)
-                    }, {
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_idps)
-                    }]
-                })
-                renderChart({
-                    element: document.querySelector("#grid"),
-                    masonry: masonry,
-                    type: "pie",
-                    title: "IdPs with Errors and with Interaction",
-                    labels: Object.keys(d.data.domains_idps_with_error_with_interaction),
-                    datasets: [{
-                        label: "Domains",
-                        data: Object.values(d.data.domains_idps_with_error_with_interaction)
-                    },{
-                        label: "Buttons",
-                        data: Object.values(d.data.buttons_idps_with_error_with_interaction)
                     }]
                 })
             })

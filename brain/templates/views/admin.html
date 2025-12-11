@@ -129,10 +129,10 @@
             <div class="bg-light rounded-3 p-2">
                 <h4>External Docker Services</h4>
                 <div>
-                    <a class="btn btn-primary mb-2" href="//{{ config['RABBITMQ_EXTERNAL_DOMAIN'] }}" target="_blank"><i class="bi bi-chat-left-dots"></i> RabbitMQ</a>
-                    <a class="btn btn-primary mb-2" href="//{{ config['MONGOEXPRESS_EXTERNAL_DOMAIN'] }}/db/FidentiKit" target="_blank"><i class="bi bi-database"></i> MongoDB</a>
-                    <a class="btn btn-primary mb-2" href="//{{ config['MINIO_EXTERNAL_DOMAIN'] }}" target="_blank"><i class="bi bi-database-fill"></i> Minio</a>
-                    <a class="btn btn-primary mb-2" href="//{{ config['JUPYTER_EXTERNAL_DOMAIN'] }}" target="_blank"><i class="bi bi-filetype-py"></i> Jupyter</a>
+                    <a class="btn btn-primary mb-2" href="{{ application_root }}/rabbitmq" target="_blank"><i class="bi bi-chat-left-dots"></i> RabbitMQ</a>
+                    <a class="btn btn-primary mb-2" href="{{ application_root }}/mongo-express/db/FidentiKit" target="_blank"><i class="bi bi-database"></i> MongoDB</a>
+                    <a class="btn btn-primary mb-2" href="{{ application_root }}/minio" target="_blank"><i class="bi bi-database-fill"></i> Minio</a>
+                    <a class="btn btn-primary mb-2" href="{{ application_root }}/jupyter" target="_blank"><i class="bi bi-filetype-py"></i> Jupyter</a>
                 </div>
                 <h4>Manage Scans</h4>
                 <div>
@@ -150,7 +150,7 @@
                 </div>
                 <h4>Manage Ground Truth</h4>
                 <div>
-                    <a class="btn btn-primary mb-2" href="https://docs.google.com/spreadsheets/d/1svsi5xOq6Yxb8nhuLxUKkgLyu6vVh5hWWV_-Yx7CPXE/edit?usp=sharing" target="_blank"><i class="bi bi-file-earmark-spreadsheet"></i> Sheet</a>
+                    <a class="btn btn-primary mb-2" href="https://github.com/socsys/fidentikit" target="_blank"><i class="bi bi-file-earmark-spreadsheet"></i> Sheet</a>
                     <button class="btn btn-warning mb-2" id="copyGroundTruthBtn">
                         <i class="bi bi-clipboard"></i> Copy
                     </button>
@@ -159,7 +159,7 @@
                     </button>
                 </div>
                 <h4>Manage Database and Caches</h4>
-                <div>
+                <div class="mb-4">
                     <button class="btn btn-warning mb-2" id="createDBIndexBtn">
                         <i class="bi bi-database-gear"></i> Index DB
                     </button>
@@ -240,13 +240,13 @@
                 <h6>Show and delete stored queries</h6>
                 <div class="input-group mb-2">
                     <span class="input-group-text"><i class="bi bi-card-text me-1"></i> Description</span>
-                    <select class="form-control" size="5" id="querySelect">
+                    <select class="form-control" size="5" id="querySelect" style="min-height: 120px;">
                     </select>
                     <button class="btn btn-danger" id="queryDeleteBtn">Delete</button>
                 </div>
-                <div class="input-group mb-4">
+                <div class="input-group mb-3">
                     <span class="input-group-text"><i class="bi bi-braces me-1"></i> Query</span>
-                    <textarea class="form-control" id="queryTextarea" rows="5" disabled></textarea>
+                    <textarea class="form-control" id="queryTextarea" rows="4" disabled></textarea>
                 </div>
                 <h6>Add stored queries</h6>
                 <div class="input-group mb-2">
@@ -256,7 +256,7 @@
                 </div>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-braces me-1"></i> Query</span>
-                    <textarea class="form-control" id="addQueryTextarea" rows="5"></textarea>
+                    <textarea class="form-control" id="addQueryTextarea" rows="4"></textarea>
                 </div>
             </div>
         </div>

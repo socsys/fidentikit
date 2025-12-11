@@ -2,7 +2,7 @@ JSONEditor.defaults.editors.object.options.collapsed = true
 
 JSONEditorDefaultsEdit = {
     ajax: true,
-    ajaxBase: "/static/schema/",
+    ajaxBase: `${window.APPLICATION_ROOT || ""}/static/schema/`,
     ajax_cache_responses: false,
     theme: "bootstrap5",
     iconlib: "bootstrap",
@@ -21,7 +21,7 @@ JSONEditorDefaultsEdit = {
 
 JSONEditorDefaultsView = {
     ajax: true,
-    ajaxBase: "/static/schema/",
+    ajaxBase: `${window.APPLICATION_ROOT || ""}/static/schema/`,
     ajax_cache_responses: false,
     theme: "bootstrap5",
     iconlib: "bootstrap",

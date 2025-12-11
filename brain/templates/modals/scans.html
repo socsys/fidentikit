@@ -68,7 +68,7 @@
                 }
             },
             server: {
-                url: `/api/scans/${analysis}`,
+                url: `${api.endpoint}/scans/${analysis}`,
                 total: (data) => data.data.total,
                 then: (data) => {
                     return data.data.result.map(d => {

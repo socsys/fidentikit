@@ -10,6 +10,7 @@
         "oauth_authorization_server": false, // https://datatracker.ietf.org/doc/html/rfc8414#section-3
         "oauth_client": false, // https://datatracker.ietf.org/doc/html/draft-looker-oauth-client-discovery-01#section-3
         "openid_configuration": false, // https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+        "passkey_endpoints": false, // check for /.well-known/passkey-endpoints
         "robots_txt": true, // https://datatracker.ietf.org/doc/html/rfc9309#name-access-method
         "security_txt": true, // https://datatracker.ietf.org/doc/html/rfc9116#name-location-of-the-securitytxt
         "uma2_configuration": false, // https://backstage.forgerock.com/docs/am/7/uma-guide/configure-uma-discovery.html

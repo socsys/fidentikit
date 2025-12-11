@@ -33,15 +33,38 @@ class PasskeyAnalyzer:
             "login_page_candidates": [],
             "passkey": {
                 "detected": False,
-                "detection_methods": [],
                 "confidence": "NONE",
+                "detection_methods": [],  # Categories: UI_ELEMENT, DOM_STRUCTURE, JS_API, NETWORK, LIBRARY, ENTERPRISE
                 "indicators": [],
+                "login_page_url": None,
+                "login_page_strategy": None,
+                "webauthn_api_available": False,
                 "implementation": {
                     "captured": False,
+                    "trigger_method": None,
                     "create_options": None,
                     "get_options": None,
                     "credentials": [],
-                    "cdp_events": []
+                    "cdp_events": [],  # Capped at 50
+                    "attestation": None,
+                    "extensions": None,
+                    "user_verification": None,
+                    "authenticator_attachment": None,
+                    "resident_key": None,
+                    "conditional_mediation": None
+                },
+                "artifacts": {
+                    "screenshot": None,
+                    "har": None,
+                    "webauthn_calls": []
+                },
+                "element_info": {
+                    "coordinates_x": None,
+                    "coordinates_y": None,
+                    "width": None,
+                    "height": None,
+                    "inner_text": None,
+                    "outer_html": None
                 }
             }
         }
@@ -155,34 +178,76 @@ class PasskeyAnalyzer:
                     
                     if detection_result["detected"]:
                         logger.info(f"Passkey detected on: {lpc_url}")
+                        
+                        # Update passkey detection info
                         self.result["passkey"]["detected"] = True
-                        self.result["passkey"]["detection_methods"] = detection_result["detection_methods"]
-                        self.result["passkey"]["confidence"] = detection_result["confidence"]
+                        self.result["passkey"]["detection_methods"] = detection_result.get("detection_methods", [])
+                        self.result["passkey"]["confidence"] = detection_result.get("confidence", "NONE")
                         self.result["passkey"]["indicators"] = detection_result.get("indicators", [])
-                        # Copy element info fields
-                        for field in ["element_coordinates_x", "element_coordinates_y", "element_width", 
-                                     "element_height", "element_inner_text", "element_outer_html", 
-                                     "element_tree", "element_validity", "webauthn_api_available"]:
-                            if field in detection_result:
-                                self.result["passkey"][field] = detection_result[field]
                         self.result["passkey"]["login_page_url"] = lpc_url
                         self.result["passkey"]["login_page_strategy"] = lpc["login_page_strategy"]
+                        self.result["passkey"]["webauthn_api_available"] = detection_result.get("webauthn_api_available", False)
                         
+                        # Update element info
+                        self.result["passkey"]["element_info"] = {
+                            "coordinates_x": detection_result.get("element_coordinates_x"),
+                            "coordinates_y": detection_result.get("element_coordinates_y"),
+                            "width": detection_result.get("element_width"),
+                            "height": detection_result.get("element_height"),
+                            "inner_text": detection_result.get("element_inner_text"),
+                            "outer_html": detection_result.get("element_outer_html")
+                        }
+                        
+                        # Capture implementation parameters using virtual authenticator
                         impl_result = passkey_detector.capture_implementation_params(lpc_url)
-                        self.result["passkey"]["implementation"] = impl_result
                         
+                        if impl_result.get("captured"):
+                            self.result["passkey"]["implementation"]["captured"] = True
+                            self.result["passkey"]["implementation"]["trigger_method"] = impl_result.get("trigger_method")
+                            self.result["passkey"]["implementation"]["create_options"] = impl_result.get("create_options")
+                            self.result["passkey"]["implementation"]["get_options"] = impl_result.get("get_options")
+                            self.result["passkey"]["implementation"]["credentials"] = impl_result.get("credentials", [])
+                            # Cap CDP events at 50
+                            self.result["passkey"]["implementation"]["cdp_events"] = impl_result.get("cdp_events", [])[:50]
+                            
+                            # Extract specific implementation details from options
+                            create_opts = impl_result.get("create_options") or {}
+                            get_opts = impl_result.get("get_options") or {}
+                            
+                            # Extract attestation
+                            if create_opts.get("attestation"):
+                                self.result["passkey"]["implementation"]["attestation"] = create_opts["attestation"]
+                            
+                            # Extract extensions
+                            if create_opts.get("extensions") or get_opts.get("extensions"):
+                                self.result["passkey"]["implementation"]["extensions"] = create_opts.get("extensions") or get_opts.get("extensions")
+                            
+                            # Extract authenticator selection
+                            auth_sel = create_opts.get("authenticatorSelection") or {}
+                            if auth_sel.get("userVerification"):
+                                self.result["passkey"]["implementation"]["user_verification"] = auth_sel["userVerification"]
+                            if auth_sel.get("authenticatorAttachment"):
+                                self.result["passkey"]["implementation"]["authenticator_attachment"] = auth_sel["authenticatorAttachment"]
+                            if auth_sel.get("residentKey"):
+                                self.result["passkey"]["implementation"]["resident_key"] = auth_sel["residentKey"]
+                            
+                            # Check for conditional mediation
+                            if get_opts.get("mediation") == "conditional":
+                                self.result["passkey"]["implementation"]["conditional_mediation"] = True
+                        
+                        # Store artifacts
                         if self.artifacts_config.get("store_passkey_screenshot"):
                             try:
                                 screenshot = PlaywrightHelper.take_screenshot(page)
-                                self.result["passkey"]["screenshot"] = screenshot
-                            except:
-                                pass
+                                self.result["passkey"]["artifacts"]["screenshot"] = screenshot
+                            except Exception as e:
+                                logger.debug(f"Error taking screenshot: {e}")
                         
                         if self.artifacts_config.get("store_passkey_har") and har_file:
                             try:
-                                self.result["passkey"]["har"] = PlaywrightHelper.take_har(har)
-                            except:
-                                pass
+                                self.result["passkey"]["artifacts"]["har"] = PlaywrightHelper.take_har(har)
+                            except Exception as e:
+                                logger.debug(f"Error storing HAR: {e}")
                         
                         return
                     

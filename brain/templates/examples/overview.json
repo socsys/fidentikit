@@ -7,7 +7,9 @@
         "resolved": {...}, // see "Resolved" section
         "timings": {...}, // see "Timings" section
         "login_page_candidates": [...], // see "Login Pages" section
-        "recognized_idps": [...], // see "Idps" section
+        "passkey_detection": {...}, // see "Passkey Detection" section
+        "authentication_mechanisms": {...}, // see "Authentication Mechanisms" section
+        "identity_providers": [...], // see "Identity Providers" section
         "recognized_lastpass_icons": [...], // see "Lastpass Icons" section
         "recognized_navcreds": [...], // see "Navigator Credentials" section
         "metadata_available": {...}, // see "Metadata" section

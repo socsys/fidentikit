@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 sticky-top shadow-sm" style="z-index: 1050;">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ url_for('views.index') }}">Fidentikit</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar">
@@ -39,7 +39,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('views.code') }}">
+                    <a class="nav-link" href="https://github.com/socsys/fidentikit" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-github"></i>
                         <span>Code</span>
                     </a>
@@ -54,6 +54,12 @@
                     <a class="nav-link" href="{{ url_for('views.bib') }}">
                         <i class="bi bi-quote"></i>
                         <span>Citation</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('views.disclaimer') }}">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Disclaimer</span>
                     </a>
                 </li>
                 <li class="nav-item">

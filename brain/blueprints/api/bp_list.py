@@ -34,10 +34,10 @@ def get_list(query_data):
 
     # only include tasks in the list from scans with special tag
     list_scan_ids = []
-    c = db["scan_tags"].find_one({"tag_name": "sso-tranco-list"})
+    c = db["scan_tags"].find_one({"tag_name": "passkey-tranco-list"})
     if c: list_scan_ids = c["scan_ids"]
 
-    # load sso list
+    # load passkey list
     def generate():
         yield "["
         for rank, domain in enumerate(tranco_list.list[start_rank-1:end_rank]):
@@ -53,19 +53,21 @@ def get_list(query_data):
                 e["task_timestamp_response_received"] = c[0]["task_config"].get("task_timestamp_response_received")
                 e["resolved"] = c[0]["landscape_analysis_result"].get("resolved")
                 e["timings"] = c[0]["landscape_analysis_result"].get("timings")
-                e["login_page_candidates"] = c[0]["landscape_analysis_result"].get("login_page_candidates")
-                e["recognized_idps"] = c[0]["landscape_analysis_result"].get("recognized_idps")
-                e["recognized_lastpass_icons"] = c[0]["landscape_analysis_result"].get("recognized_lastpass_icons")
-                e["recognized_navcreds"] = c[0]["landscape_analysis_result"].get("recognized_navcreds")
-                e["metadata_available"] = c[0]["landscape_analysis_result"].get("metadata_available")
-                e["metadata_data"] = c[0]["landscape_analysis_result"].get("metadata_data")
+            e["login_page_candidates"] = c[0]["landscape_analysis_result"].get("login_page_candidates")
+            e["passkey_detection"] = c[0]["landscape_analysis_result"].get("passkey_detection")
+            e["authentication_mechanisms"] = c[0]["landscape_analysis_result"].get("authentication_mechanisms")
+            e["identity_providers"] = c[0]["landscape_analysis_result"].get("identity_providers")
+            e["recognized_lastpass_icons"] = c[0]["landscape_analysis_result"].get("recognized_lastpass_icons")
+            e["recognized_navcreds"] = c[0]["landscape_analysis_result"].get("recognized_navcreds")
+            e["metadata_available"] = c[0]["landscape_analysis_result"].get("metadata_available")
+            e["metadata_data"] = c[0]["landscape_analysis_result"].get("metadata_data")
             yield f"{json.dumps(e)}"
             if rank != end_rank-1: yield f", "
         yield "]"
 
     return generate(), {
         "Content-Type": "application/json",
-        "Content-Disposition": f"attachment; filename=sso_{date}_tranco_{tranco_list.list_id}.json"
+        "Content-Disposition": f"attachment; filename=passkey_{date}_tranco_{tranco_list.list_id}.json"
     }
 
 

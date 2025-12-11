@@ -42,23 +42,34 @@ def admin():
     
     # Get authentication stats with error handling
     try:
-        # Get total passkey count (only UI implementations)
+        # Get landscape passkey detection count (using new passkey_detection structure)
         passkey_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "PASSKEY"
+            "landscape_analysis_result.passkey_detection.detected": True
         })
         
-        # Get passkey UI count based on detection_method
+        # Get passkey UI count based on detection_methods containing UI_ELEMENT
         passkey_ui_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "PASSKEY",
-            "landscape_analysis_result.recognized_idps.detection_method": "UI"
+            "landscape_analysis_result.passkey_detection.detected": True,
+            "landscape_analysis_result.passkey_detection.detection_methods": "UI_ELEMENT"
+        })
+        
+        # Get passkey JS detection count
+        passkey_js_count = db["landscape_analysis"].count_documents({
+            "landscape_analysis_result.passkey_detection.detected": True,
+            "landscape_analysis_result.passkey_detection.detection_methods": "JS_API"
         })
         
         # Keep MFA count
         mfa_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "MFA_GENERIC"
+            "landscape_analysis_result.authentication_mechanisms.mfa": {"$not": {"$size": 0}}
         })
         
-        # Get WebAuthn parameter analysis count
+        # Get password-based auth count
+        password_count = db["landscape_analysis"].count_documents({
+            "landscape_analysis_result.authentication_mechanisms.password": {"$not": {"$size": 0}}
+        })
+        
+        # Get WebAuthn parameter analysis count (passkey worker)
         passkey_analyzed_count = db["passkey_analysis"].count_documents({})
         passkey_detected_count = db["passkey_analysis"].count_documents({
             "passkey_analysis_result.passkey.detected": True
@@ -66,19 +77,19 @@ def admin():
         
         # Get identity provider counts
         google_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "GOOGLE"
+            "landscape_analysis_result.identity_providers.idp_name": "GOOGLE"
         })
         
         microsoft_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "MICROSOFT"
+            "landscape_analysis_result.identity_providers.idp_name": "MICROSOFT"
         })
         
         apple_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "APPLE"
+            "landscape_analysis_result.identity_providers.idp_name": "APPLE"
         })
         
         github_count = db["landscape_analysis"].count_documents({
-            "landscape_analysis_result.recognized_idps.idp_name": "GITHUB"
+            "landscape_analysis_result.identity_providers.idp_name": "GITHUB"
         })
         
         # Total identity provider count
@@ -87,7 +98,9 @@ def admin():
         current_app.logger.error(f"Error fetching authentication stats: {e}")
         passkey_count = 0
         passkey_ui_count = 0
+        passkey_js_count = 0
         mfa_count = 0
+        password_count = 0
         passkey_analyzed_count = 0
         passkey_detected_count = 0
         google_count = 0
@@ -101,7 +114,9 @@ def admin():
         config=current_app.config,
         passkey_count=passkey_count,
         passkey_ui_count=passkey_ui_count,
+        passkey_js_count=passkey_js_count,
         mfa_count=mfa_count,
+        password_count=password_count,
         passkey_analyzed_count=passkey_analyzed_count,
         passkey_detected_count=passkey_detected_count,
         google_count=google_count,
@@ -130,3 +145,8 @@ def paper():
 @bp_views.get("/paper.bib")
 def bib():
     return send_from_directory("./static", "paper.bib", as_attachment=True)
+
+
+@bp_views.get("/disclaimer")
+def disclaimer():
+    return render_template("views/disclaimer.html")
